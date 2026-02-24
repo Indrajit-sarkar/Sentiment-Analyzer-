@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facial Sentiment Analysis - Enhanced</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .video-wrapper {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #videoFeed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+        
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #38a169;
+        }
+        
+        .btn-secondary {
+            background: #a0aec0;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #718096;
+        }
+        
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            background: #f7fafc;
+            border-color: #5568d3;
+        }
+        
+        .upload-section input[type="file"] {
+            display: none;
+        }
+        
+        .upload-label {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .upload-label:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .emotion-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .emotion-happy { background: #48bb78; color: white; }
+        .emotion-sad { background: #4299e1; color: white; }
+        .emotion-angry { background: #f56565; color: white; }
+        .emotion-surprise { background: #ed8936; color: white; }
+        .emotion-fear { background: #9f7aea; color: white; }
+        .emotion-disgust { background: #38b2ac; color: white; }
+        .emotion-neutral { background: #a0aec0; color: white; }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-container h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .emotion-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .chart-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-label {
+            width: 100px;
+            font-weight: 600;
+        }
+        
+        .chart-bar {
+            flex: 1;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .chart-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s;
+        }
+        
+        .chart-value {
+            width: 60px;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        canvas {
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Facial Sentiment Analysis - Enhanced</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('realtime')">Real-time Camera</button>
+            <button class="tab" onclick="switchTab('image')">Analyze Image</button>
+            <button class="tab" onclick="switchTab('video')">Analyze Video</button>
+            <button class="tab" onclick="switchTab('batch')">Batch Processing</button>
+        </div>
+        
+        <!-- Real-time Camera Tab -->
+        <div id="realtime" class="tab-content active">
+            <div class="controls">
+                <button class="btn-primary" onclick="startCamera()">Start Camera</button>
+                <button class="btn-danger" onclick="stopCamera()">Stop Camera</button>
+                <button class="btn-secondary" onclick="resetTracking()">Reset Tracking</button>
+                <button class="btn-success" onclick="exportData('json')">Export JSON</button>
+                <button class="btn-success" onclick="exportData('csv')">Export CSV</button>
+            </div>
+            
+            <div class="main-grid">
+                <div>
+                    <div class="video-wrapper">
+                        <img id="videoFeed" src="" alt="Camera feed will appear here">
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalDetections">0</div>
+                            <div class="stat-label">Total Detections</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avgConfidence">0%</div>
+                            <div class="stat-label">Avg Confidence</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="sessionDuration">0s</div>
+                            <div class="stat-label">Session Duration</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="dominantEmotion">-</div>
+                            <div class="stat-label">Dominant Emotion</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Real-time Emotion Timeline</h3>
+                <canvas id="timelineChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Emotion Distribution</h3>
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Image Analysis Tab -->
+        <div id="image" class="tab-content">
+            <div class="upload-section">
+                <h3>Upload an Image</h3>
+                <p style="margin: 15px 0; color: #666;">Select an image file to analyze facial emotions</p>
+                <input type="file" id="imageInput" accept="image/*" onchange="analyzeImage()">
+                <label for="imageInput" class="upload-label">Choose Image</label>
+            </div>
+            
+            <div id="imageResults"></div>
+        </div>
+        
+        <!-- Video Analysis Tab -->
+        <div id="video" class="tab-content">
+            <div class="upload-section">
+                <h3>Upload a Video</h3>
+                <p style="margin: 15px 0; color: #666;">Select a video file to analyze facial emotions throughout</p>
+                <input type="file" id="videoInput" accept="video/*" onchange="analyzeVideo()">
+                <label for="videoInput" class="upload-label">Choose Video</label>
+            </div>
+            
+            <div id="videoResults"></div>
+        </div>
+        
+        <!-- Batch Processing Tab -->
+        <div id="batch" class="tab-content">
+            <div class="upload-section">
+                <h3>Batch Process Multiple Images</h3>
+                <p style="margin: 15px 0; color: #666;">Select multiple image files to analyze at once</p>
+                <input type="file" id="batchInput" accept="image/*" multiple onchange="batchAnalyze()">
+                <label for="batchInput" class="upload-label">Choose Multiple Images</label>
+            </div>
+            
+            <div id="batchResults"></div>
+        </div>
+    </div>
+    
+    <script>
+        let cameraActive = false;
+        let trackingInterval = null;
+        let timelineChart = null;
+        let distributionChart = null;
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName !== 'realtime' && cameraActive) {
+                stopCamera();
+            }
+        }
+        
+        function startCamera() {
+            const videoFeed = document.getElementById('videoFeed');
+            videoFeed.src = '/video_feed';
+            cameraActive = true;
+            
+            // Start polling for tracking data
+            if (trackingInterval) clearInterval(trackingInterval);
+            trackingInterval = setInterval(updateTrackingData, 1000);
+        }
+        
+        function stopCamera() {
+            const videoFeed = document.getElementById('videoFeed');
+            videoFeed.src = '';
+            cameraActive = false;
+            
+            if (trackingInterval) {
+                clearInterval(trackingInterval);
+                trackingInterval = null;
+            }
+            
+            fetch('/stop_camera', { method: 'POST' });
+        }
+        
+        async function updateTrackingData() {
+            try {
+                const response = await fetch('/get_tracking_data');
+                const data = await response.json();
+                
+                updateStatistics(data.statistics);
+                updateCharts(data.history, data.statistics);
+            } catch (error) {
+                console.error('Error fetching tracking data:', error);
+            }
+        }
+        
+        function updateStatistics(stats) {
+            if (!stats || Object.keys(stats).length === 0) return;
+            
+            document.getElementById('totalDetections').textContent = stats.total_detections || 0;
+            document.getElementById('avgConfidence').textContent = 
+                ((stats.average_confidence || 0) * 100).toFixed(1) + '%';
+            document.getElementById('sessionDuration').textContent = 
+                Math.floor(stats.session_duration || 0) + 's';
+            document.getElementById('dominantEmotion').textContent = stats.dominant_emotion || '-';
+        }
+        
+        function updateCharts(history, stats) {
+            // Timeline Chart
+            const ctx1 = document.getElementById('timelineChart');
+            
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+            
+            const emotions = ['Happy', 'Sad', 'Angry', 'Surprise', 'Fear', 'Disgust', 'Neutral'];
+            const colors = {
+                'Happy': '#48bb78',
+                'Sad': '#4299e1',
+                'Angry': '#f56565',
+                'Surprise': '#ed8936',
+                'Fear': '#9f7aea',
+                'Disgust': '#38b2ac',
+                'Neutral': '#a0aec0'
+            };
+            
+            const timelineData = history.slice(-30).map(entry => ({
+                x: entry.elapsed_seconds,
+                y: emotions.indexOf(entry.emotion),
+                emotion: entry.emotion
+            }));
+            
+            timelineChart = new Chart(ctx1, {
+                type: 'scatter',
+                data: {
+                    datasets: emotions.map(emotion => ({
+                        label: emotion,
+                        data: timelineData.filter(d => d.emotion === emotion),
+                        backgroundColor: colors[emotion],
+                        pointRadius: 6
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Time (seconds)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Emotion' },
+                            ticks: {
+                                callback: function(value) {
+                                    return emotions[value];
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'bottom' }
+                    }
+                }
+            });
+            
+            // Distribution Chart
+            const ctx2 = document.getElementById('distributionChart');
+            
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+            
+            if (stats && stats.emotion_distribution) {
+                distributionChart = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(stats.emotion_distribution),
+                        datasets: [{
+                            data: Object.values(stats.emotion_distribution).map(v => (v * 100).toFixed(1)),
+                            backgroundColor: Object.keys(stats.emotion_distribution).map(e => colors[e])
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: true, position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        async function resetTracking() {
+            try {
+                await fetch('/reset_tracking', { method: 'POST' });
+                document.getElementById('totalDetections').textContent = '0';
+                document.getElementById('avgConfidence').textContent = '0%';
+                document.getElementById('sessionDuration').textContent = '0s';
+                document.getElementById('dominantEmotion').textContent = '-';
+                
+                if (timelineChart) timelineChart.destroy();
+                if (distributionChart) distributionChart.destroy();
+            } catch (error) {
+                console.error('Error resetting tracking:', error);
+            }
+        }
+        
+        async function exportData(format) {
+            try {
+                const response = await fetch('/export_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ format: format })
+                });
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `emotion_data_${Date.now()}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                alert('Error exporting data: ' + error.message);
+            }
+        }
+        
+        async function analyzeImage() {
+            const input = document.getElementById('imageInput');
+            const resultsDiv = document.getElementById('imageResults');
+            
+            if (!input.files || !input.files[0]) return;
+            
+            resultsDiv.innerHTML = '<div class="loading">Analyzing image...</div>';
+            
+            const formData = new FormData();
+            formData.append('image', input.files[0]);
+            
+            try {
+                const response = await fetch('/analyze_image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayImageResults(data);
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayImageResults(data) {
+            const resultsDiv = document.getElementById('imageResults');
+            let html = '<div class="results">';
+            
+            html += `<img src="${data.annotated_image}" class="preview-image" alt="Analyzed image">`;
+            
+            html += '<h3 style="margin-top: 20px;">Detected Emotions</h3>';
+            
+            if (data.results.length === 0) {
+                html += '<p>No faces detected in the image</p>';
+            } else {
+                data.results.forEach((result, index) => {
+                    html += `<div class="result-item">
+                        <h4>Face ${index + 1}</h4>
+                        <span class="emotion-badge emotion-${result.emotion.toLowerCase()}">${result.emotion}</span>
+                        <span>Confidence: ${(result.confidence * 100).toFixed(1)}%</span>
+                        <div class="emotion-chart">`;
+                    
+                    for (const [emotion, prob] of Object.entries(result.all_emotions)) {
+                        html += `
+                            <div class="chart-row">
+                                <div class="chart-label">${emotion}</div>
+                                <div class="chart-bar">
+                                    <div class="chart-bar-fill" style="width: ${prob * 100}%"></div>
+                                </div>
+                                <div class="chart-value">${(prob * 100).toFixed(1)}%</div>
+                            </div>`;
+                    }
+                    
+                    html += '</div></div>';
+                });
+            }
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function analyzeVideo() {
+            const input = document.getElementById('videoInput');
+            const resultsDiv = document.getElementById('videoResults');
+            
+            if (!input.files || !input.files[0]) return;
+            
+            resultsDiv.innerHTML = '<div class="loading">Analyzing video... This may take a moment.</div>';
+            
+            const formData = new FormData();
+            formData.append('video', input.files[0]);
+            
+            try {
+                const response = await fetch('/analyze_video', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayVideoResults(data);
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayVideoResults(data) {
+            const resultsDiv = document.getElementById('videoResults');
+            let html = '<div class="results">';
+            
+            html += '<h3>Video Analysis Summary</h3>';
+            html += `<div class="result-item">
+                <p><strong>Total Frames:</strong> ${data.total_frames}</p>
+                <p><strong>Analyzed Frames:</strong> ${data.analyzed_frames}</p>
+                <p><strong>Total Detections:</strong> ${data.statistics.total_detections}</p>
+                <p><strong>Dominant Emotion:</strong> 
+                    <span class="emotion-badge emotion-${data.statistics.dominant_emotion.toLowerCase()}">
+                        ${data.statistics.dominant_emotion}
+                    </span>
+                </p>
+            </div>`;
+            
+            html += '<h3>Emotion Distribution</h3>';
+            html += '<div class="emotion-chart">';
+            
+            const maxCount = Math.max(...Object.values(data.statistics.emotion_counts));
+            for (const [emotion, count] of Object.entries(data.statistics.emotion_counts)) {
+                const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                html += `
+                    <div class="chart-row">
+                        <div class="chart-label">${emotion}</div>
+                        <div class="chart-bar">
+                            <div class="chart-bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="chart-value">${count}</div>
+                    </div>`;
+            }
+            
+            html += '</div></div>';
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function batchAnalyze() {
+            const input = document.getElementById('batchInput');
+            const resultsDiv = document.getElementById('batchResults');
+            
+            if (!input.files || input.files.length === 0) return;
+            
+            resultsDiv.innerHTML = `<div class="loading">Analyzing ${input.files.length} images...</div>`;
+            
+            const formData = new FormData();
+            for (let file of input.files) {
+                formData.append('files', file);
+            }
+            
+            try {
+                const response = await fetch('/batch_analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayBatchResults(data);
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayBatchResults(data) {
+            const resultsDiv = document.getElementById('batchResults');
+            let html = '<div class="results">';
+            
+            html += `<h3>Batch Analysis Results (${data.total_files} files)</h3>`;
+            
+            data.results.forEach((result, index) => {
+                html += `<div class="result-item">
+                    <h4>${result.filename}</h4>`;
+                
+                if (result.detections.length === 0) {
+                    html += '<p>No faces detected</p>';
+                } else {
+                    result.detections.forEach((detection, faceIdx) => {
+                        html += `
+                            <div style="margin: 10px 0;">
+                                <strong>Face ${faceIdx + 1}:</strong>
+                                <span class="emotion-badge emotion-${detection.emotion.toLowerCase()}">
+                                    ${detection.emotion}
+                                </span>
+                                <span>${(detection.confidence * 100).toFixed(1)}%</span>
+                            </div>`;
+                    });
+                }
+                
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
