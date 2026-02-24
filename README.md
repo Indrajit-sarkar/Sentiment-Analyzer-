@@ -11,7 +11,6 @@ Detects and analyzes seven distinct emotions through facial expressions with hig
 <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python">
 <img src="https://img.shields.io/badge/PyTorch-2.1.0-red.svg" alt="PyTorch">
 <img src="https://img.shields.io/badge/Flask-3.0.0-green.svg" alt="Flask">
-<img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
 </p>
 
 ---
@@ -1253,3 +1252,4 @@ For questions, issues, or suggestions:
 </p>
 
 </div>
+
